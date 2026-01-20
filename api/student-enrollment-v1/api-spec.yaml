@@ -1,0 +1,183 @@
+openapi: 3.1.0
+info:
+  title: Student Enrollment Lookup API
+  description: API for looking up student enrollment information by personal details
+  version: 1.0.0
+  contact:
+    name: School API Support
+    email: api-support@school.edu
+    url: https://school.edu/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.school.edu/v1
+    description: Production server
+  - url: https://staging-api.school.edu/v1
+    description: Staging server
+
+paths:
+  /students/lookup/enrollment:
+    post:
+      summary: Lookup student enrollment information
+      description: Search for a student by first name, last name, and date of birth and return their enrollment details
+      operationId: lookupStudentEnrollment
+      tags:
+        - Students
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentLookupRequest'
+            examples:
+              lookup_request:
+                value:
+                  firstName: "Emily"
+                  lastName: "Johnson"
+                  dateOfBirth: "2006-05-20"
+      responses:
+        '200':
+          description: Student enrollment information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnrollmentInfo'
+              examples:
+                enrollment_found:
+                  value:
+                    studentId: "STU001"
+                    firstName: "Emily"
+                    lastName: "Johnson"
+                    dateOfBirth: "2006-05-20"
+                    enrollmentDate: "2023-09-01"
+                    currentGrade: "11"
+                    status: "Active"
+                    school: "Lincoln High School"
+                    gpa: 3.85
+        '404':
+          description: Student not found - no matching student with the provided information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                student_not_found:
+                  value:
+                    error: "Student not found"
+                    message: "No student found matching the provided first name, last name, and date of birth"
+                    code: "STUDENT_NOT_FOUND"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_request:
+                  value:
+                    error: "Invalid request"
+                    message: "Missing required field: firstName"
+                    code: "INVALID_REQUEST"
+
+components:
+  schemas:
+    StudentLookupRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - dateOfBirth
+      properties:
+        firstName:
+          type: string
+          description: Student's first name
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          description: Student's last name
+          minLength: 1
+          maxLength: 50
+        dateOfBirth:
+          type: string
+          description: Student's date of birth (YYYY-MM-DD)
+          format: date
+
+    EnrollmentInfo:
+      type: object
+      required:
+        - studentId
+        - firstName
+        - lastName
+        - dateOfBirth
+        - enrollmentDate
+        - currentGrade
+        - status
+      properties:
+        studentId:
+          type: string
+          description: Unique student identifier
+          pattern: "^STU\\d{3,}$"
+        firstName:
+          type: string
+          description: Student's first name
+        lastName:
+          type: string
+          description: Student's last name
+        dateOfBirth:
+          type: string
+          description: Student's date of birth
+          format: date
+        enrollmentDate:
+          type: string
+          description: Date when student enrolled at the school
+          format: date
+        currentGrade:
+          type: string
+          description: Current grade level
+          enum: ["9", "10", "11", "12"]
+        status:
+          type: string
+          description: Current enrollment status
+          enum: ["Active", "Inactive", "Graduated", "Withdrawn"]
+        school:
+          type: string
+          description: Name of the school
+        gpa:
+          type: number
+          description: Current grade point average
+          format: float
+          minimum: 0
+          maximum: 4.0
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - code
+      properties:
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Detailed error message
+        code:
+          type: string
+          description: Error code for programmatic handling
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: OAuth 2.0 Bearer token for API authentication
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Students
+    description: Student enrollment lookup
